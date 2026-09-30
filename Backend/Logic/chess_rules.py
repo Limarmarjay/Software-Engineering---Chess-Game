@@ -39,7 +39,7 @@ class ChessBoard:
         # Tournament timer: each side's remaining time only ticks down on their turn,
         # and only once the game has actually started (see start()).
         self.time_remaining: dict[str, float] = {WHITE: float(time_seconds), BLACK: float(time_seconds)}
-        self.turn_started_at = None
+        self.turn_started_at: float = time.monotonic()
         self.started = False
 
     def start(self):
@@ -157,7 +157,7 @@ class ChessBoard:
 
         promoted = False
         reaches_last_rank = piece.type == PAWN and tr == LAST_RANK[piece.color]
-        if piece.type == PAWN and (piece.is_promotion_eligible or reaches_last_rank):
+        if piece.type == PAWN and reaches_last_rank:
             if promotion not in PROMOTION_CHOICES:
                 raise IllegalMoveError(
                     f"This pawn must promote; choose one of {PROMOTION_CHOICES}."

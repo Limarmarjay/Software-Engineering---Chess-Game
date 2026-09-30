@@ -17,8 +17,6 @@ KING = "king"
 
 PROMOTION_CHOICES = (QUEEN, ROOK, BISHOP, KNIGHT)
 
-# A pawn that has made this many moves is eligible to promote on its next move.
-PAWN_PROMOTION_MOVE_THRESHOLD = 6
 
 # The rank each color's pawns promote on when they reach it.
 LAST_RANK = {WHITE: 0, BLACK: 7}
@@ -32,7 +30,7 @@ class Piece:
 
     @property
     def is_promotion_eligible(self):
-        return self.type == PAWN and self.move_count >= PAWN_PROMOTION_MOVE_THRESHOLD
+        return self.type == PAWN
 
     def copy(self):
         return Piece(self.color, self.type, self.move_count)
