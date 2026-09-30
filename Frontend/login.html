@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Game - Log In</title>
+
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+
+    <h1>Chess Game</h1>
+
+    <div id="auth-card">
+        <div id="auth-tabs">
+            <button type="button" id="tab-login" class="auth-tab active">Log In</button>
+            <button type="button" id="tab-signup" class="auth-tab">Sign Up</button>
+        </div>
+
+        <form id="login-form" class="auth-form">
+            <label for="login-username">Username</label>
+            <input type="text" id="login-username" required autocomplete="username">
+
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" required autocomplete="current-password">
+
+            <button type="submit">Log In</button>
+        </form>
+
+        <form id="signup-form" class="auth-form" hidden>
+            <label for="signup-username">Username</label>
+            <input type="text" id="signup-username" required autocomplete="username">
+
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" required autocomplete="new-password">
+
+            <button type="submit">Sign Up</button>
+        </form>
+
+        <p id="auth-error"></p>
+    </div>
+
+    <script src="/auth.js"></script>
+
+</body>
+
+</html>
