@@ -188,3 +188,199 @@ body {
     font-weight: normal;
     display: block;
 }
+
+/* Chess Login Page */
+
+.auth-page {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    color: #ffffff;
+    background-color: #171c19;
+    background-image:
+        linear-gradient(
+            rgba(15, 20, 16, 0.88),
+            rgba(15, 20, 16, 0.94)
+        ),
+        repeating-conic-gradient(
+            #29372a 0% 25%,
+            #151c17 0% 50%
+        );
+    background-size: auto, 100px 100px;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Branding */
+
+.auth-page .brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 30px;
+}
+
+.auth-page .brand-icon {
+    font-size: 45px;
+    color: #8fca54;
+}
+
+.auth-page h1 {
+    font-size: 32px;
+    color: #ffffff;
+    margin: 0;
+}
+
+/* Login Card */
+
+.auth-page #auth-card {
+    background: #252b27;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.35);
+}
+
+/* Login / Signup Tabs */
+
+.auth-page #auth-tabs {
+    display: flex;
+    background: #171c19;
+    padding: 5px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+}
+
+.auth-page .auth-tab {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #b8c0b8;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.auth-page .auth-tab.active {
+    background: #779c45;
+    color: white;
+}
+
+.auth-page .auth-tab:hover:not(.active) {
+    background: #353c36;
+}
+
+/* Heading */
+
+.auth-heading h2 {
+    font-size: 23px;
+    margin-bottom: 8px;
+}
+
+.auth-heading p {
+    color: #aeb7ad;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+/* Forms */
+
+.auth-page .auth-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-page .auth-form[hidden] {
+    display: none;
+}
+
+.auth-page .auth-form label {
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #dce4d9;
+}
+
+.auth-page .auth-form input {
+    padding: 14px;
+    margin-bottom: 20px;
+    border: 1px solid #424a43;
+    border-radius: 8px;
+    background: #353c36;
+    color: white;
+    font-size: 15px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.auth-page .auth-form input::placeholder {
+    color: #aeb7ad;
+}
+
+.auth-page .auth-form input:focus {
+    border-color: #8fca54;
+    box-shadow: 0 0 0 3px rgba(143,202,84,0.15);
+}
+
+/* Submit Button */
+
+.auth-page .submit-btn {
+    background: #779c45;
+    color: white;
+    border: none;
+    border-radius: 9px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.auth-page .submit-btn:hover {
+    background: #8fba55;
+    transform: translateY(-2px);
+}
+
+/* Error Message */
+
+.auth-page #auth-error {
+    color: #ff7777;
+    font-size: 13px;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.auth-page #auth-error:empty {
+    display: none;
+}
+
+/* Footer */
+
+.auth-page .auth-footer {
+    text-align: center;
+    color: #aeb7ad;
+    font-size: 13px;
+    margin-top: 25px;
+}
+
+/* Mobile */
+
+@media (max-width: 480px) {
+    .auth-page #auth-card {
+        padding: 22px;
+    }
+
+    .auth-page h1 {
+        font-size: 27px;
+    }
+}
