@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,45 +6,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Game - Log In</title>
-
     <link rel="stylesheet" href="/style.css">
 </head>
 
-<body>
+<body class="auth-page">
 
-    <h1>Chess Game</h1>
+    <main class="auth-container">
 
-    <div id="auth-card">
-        <div id="auth-tabs">
-            <button type="button" id="tab-login" class="auth-tab active">Log In</button>
-            <button type="button" id="tab-signup" class="auth-tab">Sign Up</button>
+        <div class="brand">
+            <span class="brand-icon">♞</span>
+            <h1>Chess Game</h1>
         </div>
 
-        <form id="login-form" class="auth-form">
-            <label for="login-username">Username</label>
-            <input type="text" id="login-username" required autocomplete="username">
+        <div id="auth-card">
 
-            <label for="login-password">Password</label>
-            <input type="password" id="login-password" required autocomplete="current-password">
+            <div id="auth-tabs">
+                <button type="button"
+                    id="tab-login"
+                    class="auth-tab active">
+                    Log In
+                </button>
 
-            <button type="submit">Log In</button>
-        </form>
+                <button type="button"
+                    id="tab-signup"
+                    class="auth-tab">
+                    Sign Up
+                </button>
+            </div>
 
-        <form id="signup-form" class="auth-form" hidden>
-            <label for="signup-username">Username</label>
-            <input type="text" id="signup-username" required autocomplete="username">
+            <div class="auth-heading">
+                <h2>Welcome Back</h2>
+                <p>Log in to continue your chess journey.</p>
+            </div>
 
-            <label for="signup-password">Password</label>
-            <input type="password" id="signup-password" required autocomplete="new-password">
+            <form id="login-form" class="auth-form">
 
-            <button type="submit">Sign Up</button>
-        </form>
+                <label for="login-username">Username</label>
+                <input type="text"
+                    id="login-username"
+                    placeholder="Enter your username"
+                    required
+                    autocomplete="username">
 
-        <p id="auth-error"></p>
-    </div>
+                <label for="login-password">Password</label>
+                <input type="password"
+                    id="login-password"
+                    placeholder="Enter your password"
+                    required
+                    autocomplete="current-password">
+
+                <button type="submit" class="submit-btn">
+                    Log In →
+                </button>
+
+            </form>
+
+            <form id="signup-form" class="auth-form" hidden>
+
+                <label for="signup-username">Username</label>
+                <input type="text"
+                    id="signup-username"
+                    placeholder="Choose a username"
+                    required
+                    autocomplete="username">
+
+                <label for="signup-password">Password</label>
+                <input type="password"
+                    id="signup-password"
+                    placeholder="Create a password"
+                    required
+                    autocomplete="new-password">
+
+                <button type="submit" class="submit-btn">
+                    Create Account →
+                </button>
+
+            </form>
+
+            <p id="auth-error" role="alert"></p>
+
+        </div>
+
+        <p class="auth-footer">
+            Ready to make your next move?
+        </p>
+
+    </main>
 
     <script src="/auth.js"></script>
 
 </body>
-
 </html>
+
