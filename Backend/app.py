@@ -8,6 +8,7 @@ from flask import Flask, jsonify, redirect, request, send_from_directory, sessio
 from Backend.Logic.auth import InvalidCredentialsError, UsernameTakenError, log_in, sign_up
 from Backend.Logic.chess_rules import ChessBoard, IllegalMoveError
 from Backend.Logic.piece_movement import PROMOTION_CHOICES, WHITE, BLACK
+from Backend.Logic.player_icons import register_player_icons
 
 load_dotenv()
 
@@ -22,7 +23,7 @@ game = ChessBoard()
 
 # Which logged-in username (if any) is playing each color this round.
 players = {WHITE: None, BLACK: None}
-
+register_player_icons(app, get_players=lambda: players)
 
 @app.route("/")
 def index():
