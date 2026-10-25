@@ -385,7 +385,6 @@ body {
     }
 }
 
-/* Add to the bottom of Design/style.css */
 #game-info { flex-wrap: wrap; gap: 16px; }
 .player-clock {
     min-width: 165px;
