@@ -128,34 +128,50 @@ function playerNameTag(color) {
     return name ? `<span class="player-name">${name}</span>` : "";
 }
 
+// The Python server owns the official time. This only animates the display.
 function syncClocks(timeRemaining) {
-    whiteClockEl.innerHTML = `White: ${formatTime(timeRemaining.white)}${playerNameTag("white")}`;
-    blackClockEl.innerHTML = `Black: ${formatTime(timeRemaining.black)}${playerNameTag("black")}`;
+    if (clockTickHandle !== null) clearInterval(clockTickHandle);
 
-    whiteClockEl.classList.toggle("active", currentState.turn === "white");
-    blackClockEl.classList.toggle("active", currentState.turn === "black");
-    whiteClockEl.classList.toggle("time-up", timeRemaining.white <= 0);
-    blackClockEl.classList.toggle("time-up", timeRemaining.black <= 0);
+    const snapshot = {
+        white: Number(timeRemaining.white),
+        black: Number(timeRemaining.black)
+    };
+    const snapshotAt = performance.now();
 
-    if (clockTickHandle) {
-        clearInterval(clockTickHandle);
-        clockTickHandle = null;
-    }
-    if (!gameplayMode || !currentState.started) return; // clock doesn't run until both seats are filled
+    function drawClock() {
+        const elapsed = (performance.now() - snapshotAt) / 1000;
+        const running = gameplayMode && currentState.started;
+        const remaining = {
+            white: Math.max(0, snapshot.white - (running && currentState.turn === "white" ? elapsed : 0)),
+            black: Math.max(0, snapshot.black - (running && currentState.turn === "black" ? elapsed : 0))
+        };
 
-    let displayedWhite = timeRemaining.white;
-    let displayedBlack = timeRemaining.black;
-    clockTickHandle = setInterval(() => {
-        if (currentState.turn === "white") {
-            displayedWhite = Math.max(0, displayedWhite - 1);
-            whiteClockEl.innerHTML = `White: ${formatTime(displayedWhite)}${playerNameTag("white")}`;
-            whiteClockEl.classList.toggle("time-up", displayedWhite <= 0);
-        } else {
-            displayedBlack = Math.max(0, displayedBlack - 1);
-            blackClockEl.innerHTML = `Black: ${formatTime(displayedBlack)}${playerNameTag("black")}`;
-            blackClockEl.classList.toggle("time-up", displayedBlack <= 0);
+        for (const color of ["white", "black"]) {
+            const el = color === "white" ? whiteClockEl : blackClockEl;
+            const label = color === "white" ? "White" : "Black";
+            // Text nodes avoid interpreting player names as HTML.
+            el.replaceChildren(document.createTextNode(`${label}: ${formatTime(remaining[color])}`));
+            const name = mySession.players[color];
+            if (name) {
+                const tag = document.createElement("span");
+                tag.className = "player-name";
+                tag.textContent = name;
+                el.appendChild(tag);
+            }
+            el.classList.toggle("active", running && currentState.turn === color && remaining[color] > 0);
+            el.classList.toggle("time-up", running && remaining[color] <= 0);
+            el.classList.toggle("low-time", running && remaining[color] > 0 && remaining[color] <= 30);
         }
-    }, 1000);
+
+        if (running && remaining[currentState.turn] <= 0) {
+            const winner = currentState.turn === "white" ? "Black" : "White";
+            renderStatus(`${winner} wins on time!`);
+        }
+    }
+
+    drawClock();
+    // Redraw often for a smooth display; elapsed time is based on a monotonic clock.
+    clockTickHandle = setInterval(drawClock, 200);
 }
 
 function clearSelection() {
@@ -314,3 +330,22 @@ async function init() {
 }
 
 init();
+
+// Refresh from the authoritative server so both browsers see moves and timeouts.
+let boardRefreshInProgress = false;
+setInterval(async () => {
+    if (!gameplayMode || boardRefreshInProgress || document.hidden) return;
+    boardRefreshInProgress = true;
+    try {
+        const state = await apiGet("/api/board");
+        // Preserve an in-progress selection if the board and turn are unchanged.
+        const changed = !currentState || state.turn !== currentState.turn ||
+            JSON.stringify(state.board) !== JSON.stringify(currentState.board);
+        if (changed) clearSelection();
+        render(state);
+    } catch (error) {
+        // Keep the last known clock display if the server is temporarily unreachable.
+    } finally {
+        boardRefreshInProgress = false;
+    }
+}, 2000);
