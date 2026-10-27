@@ -4,9 +4,10 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, request, send_from_directory, session
-
+from Backend.Logic.chess_ai import ChessAI
 from Backend.Logic.auth import InvalidCredentialsError, UsernameTakenError, log_in, sign_up
 from Backend.Logic.chess_rules import ChessBoard, IllegalMoveError
+
 from Backend.Logic.piece_movement import PROMOTION_CHOICES, WHITE, BLACK
 
 load_dotenv()
@@ -19,6 +20,8 @@ FRONTEND_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "F
 # Single in-memory game. Good enough for one board at a time; swap for a
 # per-session/per-game-id store if multiple concurrent games are ever needed.
 game = ChessBoard()
+game_mode = "pvp"
+computer = ChessAI(color=BLACK)
 
 # Which logged-in username (if any) is playing each color this round.
 players = {WHITE: None, BLACK: None}
@@ -91,6 +94,10 @@ def get_session():
 
 @app.route("/api/join", methods=["POST"])
 def join():
+        if game_mode == "pvc":
+        return jsonify({
+            "error": "Seats are assigned automatically in computer mode."
+        }), 400
     username = session.get("username")
     if not username:
         return jsonify({"error": "You must be logged in to join a game."}), 401
@@ -120,17 +127,58 @@ def join():
 
 @app.route("/api/board", methods=["GET"])
 def get_board():
-    return jsonify(game.to_dict())
+
+    return jsonify({
+        **game.to_dict(),
+        "mode": game_mode,
+        "players": players
+    })
 
 
 @app.route("/api/new-game", methods=["POST"])
 def new_game():
-    global game, players
+
+    global game, players, game_mode
+
     data = request.get_json(silent=True) or {}
+
+    requested_mode = data.get("mode", "pvp")
+
+    if requested_mode not in ("pvp", "pvc"):
+        return jsonify({
+            "error": "Invalid game mode."
+        }), 400
+
     time_seconds = data.get("time_seconds")
+
     game = ChessBoard(time_seconds) if time_seconds else ChessBoard()
-    players = {WHITE: None, BLACK: None}
-    return jsonify(game.to_dict())
+
+    game_mode = requested_mode
+
+    players = {
+        WHITE: None,
+        BLACK: None
+    }
+
+    if game_mode == "pvc":
+
+        username = session.get("username")
+
+        if not username:
+            return jsonify({
+                "error": "You must be logged in."
+            }), 401
+
+        players[WHITE] = username
+        players[BLACK] = "Computer"
+
+        game.start()
+
+    return jsonify({
+        **game.to_dict(),
+        "mode": game_mode,
+        "players": players
+    })
 
 
 @app.route("/api/legal-moves", methods=["GET"])
@@ -157,21 +205,70 @@ def _parse_square(value, field_name):
 
 @app.route("/api/move", methods=["POST"])
 def make_move():
+
     data = request.get_json(silent=True) or {}
 
+    username = session.get("username")
+
+    if game_mode == "pvc":
+
+        if not username:
+            return jsonify({
+                "error": "You must be logged in."
+            }), 401
+
+        if players[WHITE] != username:
+            return jsonify({
+                "error": "You are not the player in this game."
+            }), 403
+
+        if game.turn != WHITE:
+            return jsonify({
+                "error": "It is the computer's turn."
+            }), 400
+
     try:
-        from_pos = _parse_square(data.get("from"), "from")
-        to_pos = _parse_square(data.get("to"), "to")
+
+        from_pos = _parse_square(
+            data.get("from"),
+            "from"
+        )
+
+        to_pos = _parse_square(
+            data.get("to"),
+            "to"
+        )
+
         promotion = data.get("promotion")
+
         if promotion is not None and promotion not in PROMOTION_CHOICES:
-            return jsonify({"error": f"'promotion' must be one of {PROMOTION_CHOICES}."}), 400
 
-        result = game.move(from_pos, to_pos, promotion)
+            return jsonify({
+                "error": f"Invalid promotion choice."
+            }), 400
+
+        # Human makes a move
+        result = game.move(
+            from_pos,
+            to_pos,
+            promotion
+        )
+
+        computer_move = None
+
+        # Computer responds automatically
+        if game_mode == "pvc" and game.turn == BLACK:
+
+            computer_move = computer.make_move(game)
+
     except IllegalMoveError as exc:
-        return jsonify({"error": str(exc)}), 400
 
-    return jsonify({**result, "state": game.to_dict()})
+        return jsonify({
+            "error": str(exc)
+        }), 400
 
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    return jsonify({
+        **result,
+        "computer_move": computer_move,
+        "state": game.to_dict()
+    })
