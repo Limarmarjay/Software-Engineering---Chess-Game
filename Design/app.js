@@ -28,6 +28,10 @@ const whiteClockEl = document.getElementById("white-clock");
 const blackClockEl = document.getElementById("black-clock");
 const accountBarEl = document.getElementById("account-bar");
 const seatButtonsEl = document.getElementById("seat-buttons");
+const pvpButton = document.getElementById("pvp-btn");
+const pvcButton = document.getElementById("pvc-btn");
+
+let currentGameMode = "pvp";
 
 for (let row = 0; row < 8; row++) {
     for (let column = 0; column < 8; column++) {
@@ -182,6 +186,13 @@ function clearSelection() {
 
 async function onSquareClick(row, column) {
     if (!currentState || !gameplayMode) return;
+        if (currentGameMode === "pvc" && currentState.turn === "black") {
+        return;
+    }
+        if (currentGameMode === "pvp" &&
+        mySession.color !== currentState.turn) {
+        return;
+    }
 
     const piece = currentState.board[row][column];
 
@@ -249,9 +260,18 @@ async function attemptMove(fromRow, fromColumn, toRow, toColumn, promotion) {
     }
 
     render(data.state);
-    if (data.check) {
-        renderStatus(`${data.state.turn === "white" ? "White" : "Black"} is in check!`);
-    }
+
+if (data.computer_move) {
+    console.log("Computer played:", data.computer_move);
+}
+
+if (data.computer_move?.result?.check) {
+    renderStatus("White is in check!");
+} else if (data.check && !data.computer_move) {
+    renderStatus(
+        `${data.state.turn === "white" ? "White" : "Black"} is in check!`
+    );
+}
 }
 
 function renderAccountBar() {
@@ -265,10 +285,42 @@ function renderAccountBar() {
         accountBarEl.innerHTML = `<a href="/login">Log in / Sign up</a> to play`;
     }
 }
+async function selectGameMode(mode) {
 
+    const { ok, data } = await apiPost("/api/new-game", {
+        mode: mode
+    });
+
+    if (!ok) {
+        renderStatus(data.error, true);
+        return;
+    }
+
+    currentGameMode = mode;
+
+    clearSelection();
+
+    render(data);
+
+    await fetchSession();
+
+    if (mode === "pvc") {
+        renderStatus("Player vs Computer: You are White!");
+    } else {
+        renderStatus("Player vs Player: Choose your color!");
+    }
+}
 function renderSeatButtons() {
+
     seatButtonsEl.innerHTML = "";
+
     if (!mySession.username) return;
+
+    if (currentGameMode === "pvc") {
+        seatButtonsEl.innerHTML =
+            "<p>You are playing White against the Computer.</p>";
+        return;
+    }
 
     ["white", "black"].forEach((color) => {
         const holder = mySession.players[color];
@@ -321,14 +373,26 @@ async function init() {
 
     try {
         const state = await apiGet("/api/board");
-        gameplayMode = true;
-        render(state);
-        await fetchSession();
+
+gameplayMode = true;
+
+// Remember which game mode is currently active
+currentGameMode = state.mode || "pvp";
+
+render(state);
+
+await fetchSession();
     } catch (err) {
         gameplayMode = false;
     }
 }
+pvpButton.addEventListener("click", () => {
+    selectGameMode("pvp");
+});
 
+pvcButton.addEventListener("click", () => {
+    selectGameMode("pvc");
+});
 init();
 
 // Refresh from the authoritative server so both browsers see moves and timeouts.
@@ -338,6 +402,7 @@ setInterval(async () => {
     boardRefreshInProgress = true;
     try {
         const state = await apiGet("/api/board");
+        currentGameMode = state.mode || "pvp";
         // Preserve an in-progress selection if the board and turn are unchanged.
         const changed = !currentState || state.turn !== currentState.turn ||
             JSON.stringify(state.board) !== JSON.stringify(currentState.board);
