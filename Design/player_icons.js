@@ -4,10 +4,11 @@
     if (window.chessPlayerIconsLoaded) return;
     window.chessPlayerIconsLoaded = true;
 
-    const CHOICES = ["king", "queen", "rook", "bishop", "knight", "pawn"];
+    const CHOICES = ["star", "spark", "club", "heart", "spade", "diamond"];
     const SYMBOLS = {
-        white: { king: "♔", queen: "♕", rook: "♖", bishop: "♗", knight: "♘", pawn: "♙" },
-        black: { king: "♚", queen: "♛", rook: "♜", bishop: "♝", knight: "♞", pawn: "♟" }
+        // U+FE0E forces the plain text glyph so the OS never swaps in a colored emoji.
+        star: "★\uFE0E", spark: "✦\uFE0E", club: "♣\uFE0E",
+        heart: "♥\uFE0E", spade: "♠\uFE0E", diamond: "♦\uFE0E"
     };
     const POLL_MS = 3000;
     const API = "/api/player-icons";
@@ -53,9 +54,9 @@
         const panel = element("section", "pi-settings");
         panel.id = "player-icon-settings";
         panel.setAttribute("aria-labelledby", "pi-title");
-        const heading = element("h2", "pi-heading", "Choose your player icon");
+        const heading = element("h2", "pi-heading", "Pick your avatar");
         heading.id = "pi-title";
-        const hint = element("p", "pi-hint", "Your icon is just for display. It does not change your chess pieces.");
+        const hint = element("p", "pi-hint", "Your avatar shows next to your name during the game. It never changes your chess pieces.");
         const group = element("div", "pi-options");
         group.setAttribute("role", "group");
         group.setAttribute("aria-label", "Chess piece icons");
@@ -64,10 +65,11 @@
             const button = element("button", "pi-choice");
             button.type = "button";
             button.dataset.piece = piece;
+            button.title = title(piece);
             button.disabled = true;
             button.setAttribute("aria-pressed", "false");
-            button.setAttribute("aria-label", `Use ${piece} as your player icon`);
-            const glyph = element("span", "pi-choice-symbol", SYMBOLS.white[piece]);
+            button.setAttribute("aria-label", `Use ${piece} as your avatar`);
+            const glyph = element("span", "pi-choice-symbol", SYMBOLS[piece]);
             glyph.setAttribute("aria-hidden", "true");
             button.append(glyph, element("span", "pi-choice-name", title(piece)));
             button.addEventListener("click", () => saveIcon(piece));
@@ -78,9 +80,11 @@
         message.setAttribute("role", "status");
         message.setAttribute("aria-live", "polite");
         panel.append(heading, hint, group, message);
-        const anchor = document.getElementById("seat-buttons") ||
+        const slot = document.getElementById("avatar-slot");
+        const anchor = slot ? null : document.getElementById("seat-buttons") ||
             document.getElementById("account-bar") || document.getElementById("game-info");
-        if (anchor) anchor.after(panel);
+        if (slot) slot.append(panel);
+        else if (anchor) anchor.after(panel);
         else document.body.append(panel);
         controls = { panel, buttons, message };
     }
@@ -97,9 +101,9 @@
             const person = state?.players?.[color];
             const kind = person?.kind || "empty";
             const human = kind === "human";
-            const piece = CHOICES.includes(person?.icon) ? person.icon : "king";
+            const piece = CHOICES.includes(person?.icon) ? person.icon : "star";
             nodes.avatar.className = human ? `pi-avatar pi-${color}` : "pi-avatar pi-neutral";
-            nodes.avatar.textContent = human ? SYMBOLS[color][piece] : "";
+            nodes.avatar.textContent = human ? SYMBOLS[piece] : "";
             nodes.avatar.setAttribute("aria-label", human
                 ? `${title(color)} player icon: ${title(piece)}`
                 : kind === "computer" ? "Computer: grey icon" : "Empty player seat: grey icon");
@@ -108,13 +112,12 @@
             nodes.detail.textContent = human && person.username === state?.username
                 ? "You" : human ? `${title(piece)} icon` : kind === "computer" ? "Computer-controlled" : "Seat available";
         }
-        const color = state?.color === "black" ? "black" : "white";
         for (const piece of CHOICES) {
             const { button, glyph } = controls.buttons[piece];
             const selected = Boolean(state?.username) && state.current_icon === piece;
             button.setAttribute("aria-pressed", String(selected));
             button.disabled = saving || !state?.username;
-            glyph.textContent = SYMBOLS[color][piece];
+            glyph.textContent = SYMBOLS[piece];
         }
         controls.panel.setAttribute("aria-busy", String(saving));
     }
@@ -153,7 +156,7 @@
             draw();
             if (!state.username) say("Log in to choose your icon.");
             else if (previousUsername !== state.username || recovering) {
-                say(`Your saved icon: ${title(state.current_icon)}. Click a piece to change it.`);
+                say(`Your saved icon: ${title(state.current_icon)}. Click an avatar to change it.`);
             }
         } catch (error) {
             if (version === generation && !saving) {
@@ -168,7 +171,7 @@
     async function saveIcon(piece) {
         if (saving || !state?.username || !CHOICES.includes(piece)) return;
         if (state.current_icon === piece) {
-            say(`${title(piece)} is already your saved icon.`);
+            say(`${title(piece)} is already your avatar.`);
             return;
         }
         saving = true;
@@ -181,7 +184,7 @@
                 headers: { "Content-Type": "application/json", "X-Player-Icon-CSRF": state.csrf_token },
                 body: JSON.stringify({ icon: piece })
             });
-            say(`Saved! Your player icon is now ${title(state.current_icon)}.`);
+            say(`Saved! Your avatar is now ${title(state.current_icon)}.`);
         } catch (error) {
             say(error.name === "AbortError" ? "The save timed out. Checking your saved icon on the next refresh."
                 : error.message, true);

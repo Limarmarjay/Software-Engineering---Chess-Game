@@ -1,4 +1,4 @@
-"""Display-only chess-piece avatars, stored separately from the chess engine.
+"""Display-only player avatars (plain symbols, never chess pieces), stored separately from the chess engine.
 
 Installation in Backend/app.py:
     from Backend.Logic.player_icons import register_player_icons
@@ -18,8 +18,8 @@ from typing import Callable, Mapping, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from flask import Flask
 
-ICON_CHOICES = ("king", "queen", "rook", "bishop", "knight", "pawn")
-DEFAULT_ICON = "king"
+ICON_CHOICES = ("star", "spark", "club", "heart", "spade", "diamond")
+DEFAULT_ICON = "star"
 COLORS = ("white", "black")
 
 
@@ -36,10 +36,10 @@ class PlayerIconStore:
         try:
             with connection:
                 connection.execute(
-                    "CREATE TABLE IF NOT EXISTS player_icons ("
+                    "CREATE TABLE IF NOT EXISTS player_symbols ("
                     "username TEXT PRIMARY KEY NOT NULL, "
                     "piece TEXT NOT NULL CHECK (piece IN "
-                    "('king', 'queen', 'rook', 'bishop', 'knight', 'pawn')))"
+                    "('star', 'spark', 'club', 'heart', 'spade', 'diamond')))"
                 )
                 yield connection
         finally:
@@ -56,7 +56,7 @@ class PlayerIconStore:
         with self._connection() as connection:
             for name in names:
                 row = connection.execute(
-                    "SELECT piece FROM player_icons WHERE username = ?", (name,)
+                    "SELECT piece FROM player_symbols WHERE username = ?", (name,)
                 ).fetchone()
                 if row and row[0] in ICON_CHOICES:
                     result[name] = row[0]
@@ -66,10 +66,10 @@ class PlayerIconStore:
         if not isinstance(username, str) or not username:
             raise ValueError("A logged-in username is required.")
         if not isinstance(piece, str) or piece not in ICON_CHOICES:
-            raise ValueError("Choose king, queen, rook, bishop, knight, or pawn.")
+            raise ValueError("Choose star, spark, club, heart, spade, or diamond.")
         with self._connection() as connection:
             connection.execute(
-                "INSERT INTO player_icons (username, piece) VALUES (?, ?) "
+                "INSERT INTO player_symbols (username, piece) VALUES (?, ?) "
                 "ON CONFLICT(username) DO UPDATE SET piece = excluded.piece",
                 (username, piece),
             )
@@ -139,7 +139,7 @@ def register_player_icons(
         return {
             "username": username,
             "color": my_color,
-            "current_icon": choices.get(username, DEFAULT_ICON),
+            "current_icon": choices.get(username, DEFAULT_ICON) if username else DEFAULT_ICON,
             "choices": list(ICON_CHOICES),
             "csrf_token": csrf_token,
             "players": player_data,
@@ -177,7 +177,7 @@ def register_player_icons(
             return jsonify(error="Send only an 'icon' field for your own account."), 400
         piece = data["icon"]
         if not isinstance(piece, str) or piece not in ICON_CHOICES:
-            return jsonify(error="Choose king, queen, rook, bishop, knight, or pawn."), 400
+            return jsonify(error="Choose star, spark, club, heart, spade, or diamond."), 400
 
         try:
             # The browser cannot select a target username or edit an opponent.
