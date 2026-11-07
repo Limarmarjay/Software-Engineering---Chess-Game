@@ -6,25 +6,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chess Game</title>
 
+    <script src="theme.js?v=2"></script>
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="./player_icons.css">
 </head>
 
-<body>
+<body class="game-page">
 
-    <h1>Chess Game</h1>
+    <header class="topbar">
+        <h1 class="brand"><span class="game-logo">♞</span> Chess Game</h1>
+        <div class="topbar-right">
+            <div id="account-bar"></div>
+            <div id="theme-slot"></div>
+        </div>
+    </header>
 
-    <div id="account-bar"></div>
+    <main class="game-layout">
 
-    <div class="seat-buttons" id="seat-buttons"></div>
+        <section class="board-col" aria-label="Game board">
+            <div class="player-slot"><div class="player-clock" id="black-clock">10:00</div></div>
+            <div id="chessboard"></div>
+            <div class="player-slot"><div class="player-clock" id="white-clock">10:00</div></div>
+        </section>
 
-    <div id="game-info">
-        <div class="player-clock" id="black-clock">Black: 10:00</div>
-        <div id="status">White's turn</div>
-        <div class="player-clock" id="white-clock">White: 10:00</div>
-    </div>
+        <aside class="side-col">
+            <section class="panel">
+                <h2 class="panel-title">Game</h2>
+                <div id="status">White's turn</div>
+                <p id="seat-hint" class="seat-hint"></p>
+                <div class="game-actions" id="game-actions"></div>
+            </section>
 
-    <div id="chessboard"></div>
+            <section class="panel">
+                <h2 class="panel-title">Sides</h2>
+                <div class="seat-buttons" id="seat-buttons"></div>
+            </section>
+
+            <section class="panel" id="avatar-slot"></section>
+        </aside>
+
+    </main>
 
     <script src="app.js"></script>
     <script src="player_icons.js"></script>

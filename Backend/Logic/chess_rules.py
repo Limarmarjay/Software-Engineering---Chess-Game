@@ -41,6 +41,7 @@ class ChessBoard:
         self.time_remaining: dict[str, float] = {WHITE: float(time_seconds), BLACK: float(time_seconds)}
         self.turn_started_at: float = time.monotonic()
         self.started = False
+        self.resigned: Optional[str] = None  # color of the player who resigned, if any
 
     def start(self):
         """Begins the clock. Call this once both seats are filled."""
@@ -70,7 +71,7 @@ class ChessBoard:
     def get_remaining_time(self, color):
         """Current remaining seconds for `color`, accounting for the live turn."""
         remaining = self.time_remaining[color]
-        if self.started and color == self.turn:
+        if self.started and not self.resigned and color == self.turn:
             elapsed = time.monotonic() - self.turn_started_at
             remaining -= elapsed
         return max(0.0, remaining)
@@ -84,6 +85,15 @@ class ChessBoard:
             return
         elapsed = time.monotonic() - self.turn_started_at
         self.time_remaining[self.turn] = max(0.0, self.time_remaining[self.turn] - elapsed)
+
+    def resign(self, color):
+        """Ends the game: `color` forfeits and the other side wins. The clocks stop."""
+        if not self.started:
+            raise IllegalMoveError("The game hasn't started yet.")
+        if self.resigned:
+            raise IllegalMoveError("The game is already over.")
+        self._charge_clock_for_turn()
+        self.resigned = color
 
     # --- Check detection ---------------------------------------------------
 
@@ -138,6 +148,8 @@ class ChessBoard:
     # --- Moving --------------------------------------------------------
 
     def move(self, from_pos, to_pos, promotion=None):
+        if self.resigned:
+            raise IllegalMoveError(f"The game is over: {self.resigned} resigned.")
         if self.is_time_up(self.turn):
             raise IllegalMoveError(f"{self.turn}'s clock has run out.")
 
@@ -200,6 +212,7 @@ class ChessBoard:
             "board": rows,
             "turn": self.turn,
             "started": self.started,
+            "resigned": self.resigned,
             "time_remaining": {
                 WHITE: self.get_remaining_time(WHITE),
                 BLACK: self.get_remaining_time(BLACK),

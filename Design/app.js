@@ -28,6 +28,8 @@ const whiteClockEl = document.getElementById("white-clock");
 const blackClockEl = document.getElementById("black-clock");
 const accountBarEl = document.getElementById("account-bar");
 const seatButtonsEl = document.getElementById("seat-buttons");
+const seatHintEl = document.getElementById("seat-hint");
+const gameActionsEl = document.getElementById("game-actions");
 
 for (let row = 0; row < 8; row++) {
     for (let column = 0; column < 8; column++) {
@@ -88,6 +90,8 @@ function render(state) {
 
     highlightSelection();
     renderStatus();
+    renderSeatHint();
+    renderGameActions();
     syncClocks(state.time_remaining);
 }
 
@@ -112,6 +116,12 @@ function renderStatus(message, isError = false) {
     }
 
     statusEl.classList.remove("error");
+    if (currentState.resigned) {
+        const loser = currentState.resigned === "white" ? "White" : "Black";
+        const winner = currentState.resigned === "white" ? "Black" : "White";
+        statusEl.textContent = `${loser} resigned. ${winner} wins!`;
+        return;
+    }
     const turnLabel = currentState.turn === "white" ? "White" : "Black";
     statusEl.textContent = `${turnLabel}'s turn`;
 }
@@ -123,9 +133,45 @@ function formatTime(seconds) {
     return `${minutes}:${String(secs).padStart(2, "0")}`;
 }
 
-function playerNameTag(color) {
-    const name = mySession.players[color];
-    return name ? `<span class="player-name">${name}</span>` : "";
+const SVG_NS = "http://www.w3.org/2000/svg";
+const RING_RADIUS = 44;
+const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
+let clockTotal = 600; // largest time seen: the full ring. Grows if a longer game starts.
+
+function svgEl(tag, attrs) {
+    const node = document.createElementNS(SVG_NS, tag);
+    for (const [name, value] of Object.entries(attrs)) node.setAttribute(name, value);
+    return node;
+}
+
+// A minimal analog clock (draining ring plus two hands) beside the digital time.
+function buildClockFace(el) {
+    const svg = svgEl("svg", { viewBox: "0 0 100 100", class: "analog-clock", "aria-hidden": "true" });
+    svg.append(
+        svgEl("circle", { cx: 50, cy: 50, r: RING_RADIUS, class: "clock-ring-track" }),
+        svgEl("circle", {
+            cx: 50, cy: 50, r: RING_RADIUS, class: "clock-ring",
+            "stroke-dasharray": RING_LENGTH, transform: "rotate(-90 50 50)",
+        }),
+    );
+    const minuteHand = svgEl("line", { x1: 50, y1: 50, x2: 50, y2: 24, class: "clock-minute" });
+    const secondHand = svgEl("line", { x1: 50, y1: 50, x2: 50, y2: 16, class: "clock-second" });
+    svg.append(minuteHand, secondHand);
+
+    const digital = document.createElement("span");
+    digital.className = "clock-digital";
+    el.replaceChildren(svg, digital);
+    el._face = { ring: svg.querySelector(".clock-ring"), minuteHand, secondHand, digital };
+}
+
+function updateClockFace(el, seconds) {
+    if (!el._face) buildClockFace(el);
+    clockTotal = Math.max(clockTotal, seconds);
+    const { ring, minuteHand, secondHand, digital } = el._face;
+    digital.textContent = formatTime(seconds);
+    ring.setAttribute("stroke-dashoffset", RING_LENGTH * (1 - seconds / clockTotal));
+    minuteHand.setAttribute("transform", `rotate(${(seconds % 3600) / 3600 * 360} 50 50)`);
+    secondHand.setAttribute("transform", `rotate(${(seconds % 60) / 60 * 360} 50 50)`);
 }
 
 // The Python server owns the official time. This only animates the display.
@@ -140,7 +186,7 @@ function syncClocks(timeRemaining) {
 
     function drawClock() {
         const elapsed = (performance.now() - snapshotAt) / 1000;
-        const running = gameplayMode && currentState.started;
+        const running = gameplayMode && currentState.started && !currentState.resigned;
         const remaining = {
             white: Math.max(0, snapshot.white - (running && currentState.turn === "white" ? elapsed : 0)),
             black: Math.max(0, snapshot.black - (running && currentState.turn === "black" ? elapsed : 0))
@@ -148,16 +194,7 @@ function syncClocks(timeRemaining) {
 
         for (const color of ["white", "black"]) {
             const el = color === "white" ? whiteClockEl : blackClockEl;
-            const label = color === "white" ? "White" : "Black";
-            // Text nodes avoid interpreting player names as HTML.
-            el.replaceChildren(document.createTextNode(`${label}: ${formatTime(remaining[color])}`));
-            const name = mySession.players[color];
-            if (name) {
-                const tag = document.createElement("span");
-                tag.className = "player-name";
-                tag.textContent = name;
-                el.appendChild(tag);
-            }
+            updateClockFace(el, remaining[color]);
             el.classList.toggle("active", running && currentState.turn === color && remaining[color] > 0);
             el.classList.toggle("time-up", running && remaining[color] <= 0);
             el.classList.toggle("low-time", running && remaining[color] > 0 && remaining[color] <= 30);
@@ -181,7 +218,7 @@ function clearSelection() {
 }
 
 async function onSquareClick(row, column) {
-    if (!currentState || !gameplayMode) return;
+    if (!currentState || !gameplayMode || currentState.resigned) return;
 
     const piece = currentState.board[row][column];
 
@@ -255,34 +292,116 @@ async function attemptMove(fromRow, fromColumn, toRow, toColumn, promotion) {
 }
 
 function renderAccountBar() {
+    accountBarEl.replaceChildren();
     if (mySession.username) {
-        accountBarEl.innerHTML = `Logged in as <strong>${mySession.username}</strong> &middot; <button id="logout-btn">Log out</button>`;
-        document.getElementById("logout-btn").addEventListener("click", async () => {
+        const chip = document.createElement("span");
+        chip.className = "user-chip";
+        const initial = document.createElement("span");
+        initial.className = "user-initial";
+        initial.textContent = mySession.username.charAt(0).toUpperCase();
+        const name = document.createElement("span");
+        name.className = "user-name";
+        name.textContent = mySession.username;
+        chip.append(initial, name);
+
+        const logout = document.createElement("button");
+        logout.id = "logout-btn";
+        logout.textContent = "Log out";
+        logout.addEventListener("click", async () => {
             await apiPost("/api/logout", {});
             window.location.href = "/login";
         });
+        accountBarEl.append(chip, logout);
     } else {
         accountBarEl.innerHTML = `<a href="/login">Log in / Sign up</a> to play`;
     }
 }
 
+function renderSeatHint() {
+    if (!mySession.username) {
+        seatHintEl.textContent = "";
+    } else if (currentState && currentState.resigned) {
+        seatHintEl.textContent = "This game is over. Start a new game to play again.";
+    } else if (mySession.color) {
+        seatHintEl.textContent = currentState && currentState.started
+            ? "Game on. Click a piece, then a highlighted square to move."
+            : "You're seated. Waiting for an opponent to take the other side…";
+    } else if (mySession.players.white && mySession.players.black) {
+        seatHintEl.textContent = "Both sides are taken, so you're watching this game.";
+    } else {
+        seatHintEl.textContent = "Choose a side to join the game.";
+    }
+}
+
+function isTimeUp() {
+    if (!currentState || !currentState.started) return false;
+    return currentState.time_remaining.white <= 0 || currentState.time_remaining.black <= 0;
+}
+
+// Resign while a game is live and you're seated; offer a rematch once it's over.
+function renderGameActions() {
+    gameActionsEl.replaceChildren();
+    if (!mySession.username || !currentState) return;
+
+    const gameOver = Boolean(currentState.resigned) || isTimeUp();
+    const button = document.createElement("button");
+
+    if (gameOver) {
+        button.className = "action-btn action-primary";
+        button.textContent = "New game";
+        button.addEventListener("click", async () => {
+            const { ok, data } = await apiPost("/api/new-game", {});
+            if (!ok) return renderStatus(data.error || "Couldn't start a new game.", true);
+            clearSelection();
+            render(data);
+            await fetchSession();
+        });
+    } else if (mySession.color && currentState.started) {
+        button.className = "action-btn action-danger";
+        button.textContent = "Resign";
+        button.addEventListener("click", async () => {
+            if (!window.confirm("Resign this game? Your opponent will win.")) return;
+            const { ok, data } = await apiPost("/api/resign", {});
+            if (!ok) return renderStatus(data.error || "Couldn't resign.", true);
+            clearSelection();
+            render(data);
+        });
+    } else {
+        return;
+    }
+    gameActionsEl.appendChild(button);
+}
+
+function seatCardLabels(color) {
+    const holder = mySession.players[color];
+    if (holder === mySession.username) return { title: `You're ${color}`, sub: "Your side", state: "mine" };
+    if (holder) return { title: `${color} is taken`, sub: `Played by ${holder}`, state: "taken" };
+    return { title: `Play as ${color}`, sub: "Open, click to join", state: "open" };
+}
+
 function renderSeatButtons() {
-    seatButtonsEl.innerHTML = "";
+    seatButtonsEl.replaceChildren();
+    renderSeatHint();
+    renderGameActions();
     if (!mySession.username) return;
 
     ["white", "black"].forEach((color) => {
-        const holder = mySession.players[color];
-        const label = color === "white" ? "White" : "Black";
+        const { title, sub, state } = seatCardLabels(color);
         const button = document.createElement("button");
+        button.className = `seat-card seat-${state}`;
 
-        if (holder === mySession.username) {
-            button.textContent = `Playing as ${label}`;
-            button.disabled = true;
-        } else if (holder) {
-            button.textContent = `${label} taken (${holder})`;
-            button.disabled = true;
-        } else {
-            button.textContent = `Play as ${label}`;
+        const disc = document.createElement("span");
+        disc.className = `seat-disc disc-${color}`;
+        const text = document.createElement("span");
+        text.className = "seat-text";
+        const strong = document.createElement("strong");
+        strong.textContent = title;
+        const small = document.createElement("small");
+        small.textContent = sub;
+        text.append(strong, small);
+        button.append(disc, text);
+
+        if (state === "open") {
             button.addEventListener("click", async () => {
                 const { ok, data } = await apiPost("/api/join", { color });
                 if (ok) {
@@ -297,6 +416,8 @@ function renderSeatButtons() {
                     renderStatus(data.error, true);
                 }
             });
+        } else {
+            button.disabled = true;
         }
         seatButtonsEl.appendChild(button);
     });
@@ -337,6 +458,12 @@ setInterval(async () => {
     if (!gameplayMode || boardRefreshInProgress || document.hidden) return;
     boardRefreshInProgress = true;
     try {
+        const session = await apiGet("/api/session");
+        if (JSON.stringify(session) !== JSON.stringify(mySession)) {
+            mySession = session;
+            renderAccountBar();
+            renderSeatButtons();
+        }
         const state = await apiGet("/api/board");
         // Preserve an in-progress selection if the board and turn are unchanged.
         const changed = !currentState || state.turn !== currentState.turn ||

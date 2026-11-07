@@ -134,6 +134,24 @@ def new_game():
     return jsonify(game.to_dict())
 
 
+@app.route("/api/resign", methods=["POST"])
+def resign():
+    username = session.get("username")
+    if not username:
+        return jsonify({"error": "You must be logged in to resign."}), 401
+
+    color = next((c for c, holder in players.items() if holder == username), None)
+    if color is None:
+        return jsonify({"error": "You are not playing in this game."}), 403
+
+    try:
+        game.resign(color)
+    except IllegalMoveError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify(game.to_dict())
+
+
 @app.route("/api/legal-moves", methods=["GET"])
 def legal_moves():
     try:

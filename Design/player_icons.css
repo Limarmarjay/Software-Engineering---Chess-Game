@@ -10,41 +10,40 @@
 }
 .pi-seat[data-player-color="black"] { grid-area: black; }
 .pi-seat[data-player-color="white"] { grid-area: white; }
-#game-info.pi-game-info #status { grid-area: status; min-width: 0; font-size: 17px; }
+#game-info.pi-game-info #status { grid-area: status; min-width: 0; }
 .pi-seat {
     box-sizing: border-box;
     min-width: 0;
     overflow: hidden;
-    border: 2px solid #b58863;
-    border-radius: 14px;
-    background: #fffaf3;
-    box-shadow: 0 3px 10px rgb(53 37 25 / 10%);
-    color: #26211c;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 10px 30px var(--shadow);
+    color: var(--text);
     text-align: left;
 }
-.pi-identity { display: flex; align-items: center; gap: 10px; padding: 14px 12px; }
+.pi-identity { display: flex; align-items: center; gap: 12px; padding: 14px 14px; }
 .pi-avatar {
     display: inline-flex;
-    flex: 0 0 48px;
-    width: 48px;
-    height: 48px;
+    flex: 0 0 52px;
+    width: 52px;
+    height: 52px;
     box-sizing: border-box;
     align-items: center;
     justify-content: center;
-    border: 2px solid #766353;
+    border: 3px solid var(--border);
     border-radius: 50%;
-    font-family: "Segoe UI Symbol", "DejaVu Sans", serif;
-    font-size: 35px;
-    font-weight: normal;
+    font-family: "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", sans-serif;
+    font-size: 28px;
     line-height: 1;
 }
-.pi-white { background: #fff; color: #242424; }
-.pi-black { background: #303033; color: #fff; }
-.pi-neutral { background: #bcbcbc; border-color: #898989; }
+.pi-white { background: var(--avatar-white); border-color: var(--border); color: #242424; }
+.pi-black { background: var(--avatar-black); border-color: var(--accent-text); color: #fff; }
+.pi-neutral { background: var(--surface-2); border-color: var(--border); }
 .pi-description { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.pi-side-label { font: bold 11px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: #625247; }
-.pi-player-name { font: bold 16px Arial, sans-serif; overflow-wrap: anywhere; }
-.pi-player-detail { font: 12px Arial, sans-serif; color: #625247; }
+.pi-side-label { font: bold 11px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-text); }
+.pi-player-name { font: bold 17px Arial, sans-serif; overflow-wrap: anywhere; }
+.pi-player-detail { font: 12px Arial, sans-serif; color: var(--muted); }
 /* Timer code continues to own this element and its active/low-time/time-up classes. */
 .pi-seat .player-clock {
     box-sizing: border-box;
@@ -52,31 +51,35 @@
     min-width: 0;
     margin: 0;
     padding: 12px 8px;
+    border: none;
+    border-top: 1px solid var(--border);
     border-radius: 0;
-    border-width: 2px 0 0;
+    background: var(--bg);
+    color: var(--text-soft);
     box-shadow: none;
     text-align: center;
-    font-size: 26px;
+    font-size: 28px;
 }
-.pi-seat .player-clock.active { transform: none; }
-/* Hide duplicates only inside a clock if the earlier simple-icon snippet was added. */
+.pi-seat .player-clock.active { background: var(--accent); color: #fff; transform: none; }
+.pi-seat .player-clock.low-time { color: #d98a1f; }
+.pi-seat .player-clock.time-up { background: var(--error); color: #fff; }
 .pi-seat .player-clock .player-icon,
 .pi-seat .player-clock .player-name { display: none; }
 .pi-seat .player-clock .clock-text { align-items: center; }
 .pi-settings {
     box-sizing: border-box;
     width: min(620px, calc(100% - 24px));
-    margin: 20px auto;
+    margin: 20px auto 0;
     padding: 18px;
-    border: 1px solid #d8c5af;
-    border-radius: 14px;
-    background: #fffaf3;
-    color: #26211c;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--surface);
+    color: var(--text);
     text-align: center;
     font-family: Arial, sans-serif;
 }
 .pi-heading { margin: 0 0 6px; font-size: 19px; }
-.pi-hint { margin: 0 0 16px; color: #625247; font-size: 13px; line-height: 1.5; }
+.pi-hint { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.5; }
 .pi-options { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 .pi-choice {
     display: flex;
@@ -84,23 +87,22 @@
     flex-direction: column;
     gap: 4px;
     min-width: 0;
-    min-height: 78px;
-    padding: 8px 4px;
-    border: 2px solid #d8c5af;
-    border-radius: 10px;
-    background: #fff;
-    color: #26211c;
+    padding: 10px 4px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-2);
+    color: var(--text);
     cursor: pointer;
     font-family: Arial, sans-serif;
 }
-.pi-choice:hover:not(:disabled) { background: #f0d9b5; border-color: #8c623f; }
-.pi-choice[aria-pressed="true"] { border-color: #2463a5; background: #e5f0ff; box-shadow: inset 0 0 0 1px #2463a5; }
-.pi-choice:focus-visible { outline: 3px solid #2463a5; outline-offset: 3px; }
+.pi-choice:hover:not(:disabled) { background: var(--border); border-color: var(--accent-text); }
+.pi-choice[aria-pressed="true"] { border-color: var(--accent-text); background: var(--selected); }
+.pi-choice:focus-visible { outline: 3px solid var(--accent-text); outline-offset: 3px; }
 .pi-choice:disabled { cursor: default; opacity: .6; }
-.pi-choice-symbol { font: 34px/1.1 "Segoe UI Symbol", "DejaVu Sans", serif; }
+.pi-choice-symbol { font: 30px/1.1 "Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", sans-serif; }
 .pi-choice-name { font-size: 12px; font-weight: bold; }
-.pi-message { min-height: 1.5em; margin: 14px 0 0; color: #315d38; font-size: 13px; line-height: 1.5; }
-.pi-message.pi-error { color: #9b2222; }
+.pi-message { min-height: 1.5em; margin: 14px 0 0; color: var(--accent-text); font-size: 13px; line-height: 1.5; }
+.pi-message.pi-error { color: var(--error); }
 @media (max-width: 650px) {
     #game-info.pi-game-info {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -108,8 +110,27 @@
         gap: 12px;
     }
     .pi-identity { padding: 12px 8px; gap: 8px; }
-    .pi-avatar { flex-basis: 40px; width: 40px; height: 40px; font-size: 30px; }
+    .pi-avatar { flex-basis: 40px; width: 40px; height: 40px; font-size: 22px; }
     .pi-player-name { font-size: 14px; }
     .pi-seat .player-clock { font-size: 22px; }
     .pi-options { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Minimal analog clock drawn by app.js inside each .player-clock: flat lines, no face or ticks */
+.analog-clock { flex: 0 0 48px; width: 48px; height: 48px; }
+.clock-ring-track { fill: none; stroke: var(--border); stroke-width: 4; }
+.clock-ring { fill: none; stroke: var(--accent-text); stroke-width: 4; stroke-linecap: round; transition: stroke .3s; }
+.clock-minute { stroke: var(--text); stroke-width: 4; stroke-linecap: round; }
+.clock-second { stroke: var(--accent-text); stroke-width: 2.5; stroke-linecap: round; }
+.low-time .clock-ring, .low-time .clock-second { stroke: #d98a1f; }
+.time-up .clock-ring, .time-up .clock-second { stroke: var(--error); }
+.pi-seat .player-clock.active .clock-ring,
+.pi-seat .player-clock.active .clock-minute,
+.pi-seat .player-clock.active .clock-second { stroke: #fff; }
+.pi-seat .player-clock.active .clock-ring-track { stroke: color-mix(in srgb, #fff 30%, transparent); }
+.game-page .pi-seat .player-clock { gap: 12px; min-width: 170px; }
+.clock-digital { font-variant-numeric: tabular-nums; }
+@media (max-width: 650px) {
+    .analog-clock { flex-basis: 40px; width: 40px; height: 40px; }
+    .game-page .pi-seat .player-clock { min-width: 130px; gap: 8px; }
 }
